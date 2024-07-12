@@ -4,14 +4,33 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth')->except(['index', 'show']);
+    }
+
     public function index()
     {
-        return Post::with('user', 'comments')->get();
+        $posts = Post::with('user')->latest()->get();
+        
+        if (request()->expectsJson()) {
+            return response()->json($posts);
+        }
+
+        return view('home', compact('posts'));
     }
+
+    public function create()
+    {
+        return view('posts.create');
+    }
+
 
     public function store(Request $request)
     {
@@ -20,40 +39,135 @@ class PostController extends Controller
             'body' => 'required|string',
         ]);
 
-        $post = Post::create([
-            'user_id' => auth()->id(),
+        $post = new Post([
             'title' => $request->title,
             'body' => $request->body,
         ]);
+        $post->user()->associate(auth()->user());
+        $post->save();
 
-        return response()->json($post, 201);
+        if ($request->expectsJson()) {
+            return response()->json($post, 201);
+        }
+
+        return redirect()->route('home')->with('success', 'Post created successfully.');
     }
 
     public function show(Post $post)
     {
-        return $post->load('user', 'comments');
+        $post->load('user', 'comments.user');
+        
+        if (request()->expectsJson()) {
+            return response()->json($post);
+        }
+
+        return view('posts.show', compact('post'));
+    }
+
+    public function addComment(Request $request, Post $post)
+    {
+        $request->validate([
+            'body' => 'required|string',
+        ]);
+
+        $comment = new Comment([
+            'body' => $request->body,
+        ]);
+        $comment->user()->associate(auth()->user());
+        $comment->post()->associate($post);
+        $comment->save();
+
+        if ($request->expectsJson()) {
+            return response()->json($comment, 201);
+        }
+
+        return redirect()->route('posts.show', $post)->with('success', 'Comment added successfully.');
+    }
+
+    public function edit(Post $post)
+    {
+        if (Gate::denies('update-post', $post)) {
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
+        }
+
+        return view('posts.edit', compact('post'));
     }
 
     public function update(Request $request, Post $post)
     {
-        $this->authorize('update', $post);
+        if (Gate::denies('update-post', $post)) {
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
+        }
 
         $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'body' => 'sometimes|string',
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
         ]);
 
         $post->update($request->only('title', 'body'));
 
-        return response()->json($post);
+        if ($request->expectsJson()) {
+            return response()->json($post);
+        }
+
+        return redirect()->route('posts.show', $post)->with('success', 'Post updated successfully.');
     }
 
     public function destroy(Post $post)
     {
-        $this->authorize('delete', $post);
+        if (Gate::denies('delete-post', $post)) {
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
+        }
 
         $post->delete();
 
-        return response()->json(null, 204);
+        if (request()->expectsJson()) {
+            return response()->json(null, 204);
+        }
+
+        return redirect()->route('home')->with('success', 'Post deleted successfully.');
+    }
+
+    public function editComment(Comment $comment)
+    {
+        if (Gate::denies('update-comment', $comment)) {
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
+        }
+
+        return view('comments.edit', compact('comment'));
+    }
+
+    public function updateComment(Request $request, Comment $comment)
+    {
+        if (Gate::denies('update-comment', $comment)) {
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
+        }
+
+        $request->validate([
+            'body' => 'required|string',
+        ]);
+
+        $comment->update($request->only('body'));
+
+        if ($request->expectsJson()) {
+            return response()->json($comment);
+        }
+
+        return redirect()->route('posts.show', $comment->post)->with('success', 'Comment updated successfully.');
+    }
+
+    public function destroyComment(Comment $comment)
+    {
+        if (Gate::denies('delete-comment', $comment)) {
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
+        }
+
+        $comment->delete();
+
+        if (request()->expectsJson()) {
+            return response()->json(null, 204);
+        }
+
+        return redirect()->route('posts.show', $comment->post)->with('success', 'Comment deleted successfully.');
     }
 }
