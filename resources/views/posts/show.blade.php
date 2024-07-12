@@ -13,6 +13,9 @@
                         <small class="text-muted">By {{ $post->user->name }} on {{ $post->created_at->format('M d, Y') }}</small>
                     </p>
 
+                    <p>Post user ID: {{ $post->user->id }}</p>
+                    <p>Logged in user ID: {{ auth()->user()->id }}</p>
+
                     @can('update-post', $post)
                         <a href="{{ route('posts.edit', $post) }}" class="btn btn-primary">Edit Post</a>
                         <form method="POST" action="{{ route('posts.destroy', $post) }}" style="display: inline-block;">
@@ -20,6 +23,8 @@
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger">Delete Post</button>
                         </form>
+                    @else
+                        <p>You cannot edit this post.</p>
                     @endcan
 
                     <h5>Comments</h5>
