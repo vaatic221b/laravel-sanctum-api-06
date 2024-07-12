@@ -13,9 +13,6 @@
                         <small class="text-muted">By {{ $post->user->name }} on {{ $post->created_at->format('M d, Y') }}</small>
                     </p>
 
-                    <p>Post user ID: {{ $post->user->id }}</p>
-                    <p>Logged in user ID: {{ auth()->user()->id }}</p>
-
                     @can('update-post', $post)
                         <a href="{{ route('posts.edit', $post) }}" class="btn btn-primary">Edit Post</a>
                         <form method="POST" action="{{ route('posts.destroy', $post) }}" style="display: inline-block;">
@@ -59,6 +56,7 @@
                                 </span>
                             @enderror
                         </div>
+                        <br>
                         <div class="form-group mb-0">
                             <button type="submit" class="btn btn-primary">Add Comment</button>
                         </div>

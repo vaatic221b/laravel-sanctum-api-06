@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class CommentController extends Controller
 {
@@ -24,25 +25,46 @@ class CommentController extends Controller
         return response()->json($comment, 201);
     }
 
+    public function edit(Comment $comment)
+    {
+        if (Gate::denies('update-comment', $comment)) {
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
+        }
+
+        return view('comments.edit', compact('comment'));
+    }
+
     public function update(Request $request, Comment $comment)
     {
-        $this->authorize('update', $comment);
+        if (Gate::denies('update-comment', $comment)) {
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
+        }
 
         $request->validate([
-            'body' => 'sometimes|string',
+            'body' => 'required|string',
         ]);
 
         $comment->update($request->only('body'));
 
-        return response()->json($comment);
+        if ($request->expectsJson()) {
+            return response()->json($comment);
+        }
+
+        return redirect()->route('posts.show', $comment->post)->with('success', 'Comment updated successfully.');
     }
 
     public function destroy(Comment $comment)
     {
-        $this->authorize('delete', $comment);
+        if (Gate::denies('delete-comment', $comment)) {
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
+        }
 
         $comment->delete();
 
-        return response()->json(null, 204);
+        if (request()->expectsJson()) {
+            return response()->json(null, 204);
+        }
+
+        return redirect()->route('posts.show', $comment->post)->with('success', 'Comment deleted successfully.');
     }
 }

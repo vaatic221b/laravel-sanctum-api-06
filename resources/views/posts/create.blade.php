@@ -21,7 +21,7 @@
                                 </span>
                             @enderror
                         </div>
-
+                        <br>
                         <div class="form-group">
                             <label for="body">{{ __('Body') }}</label>
                             <textarea id="body" class="form-control @error('body') is-invalid @enderror" name="body" required>{{ old('body') }}</textarea>
@@ -34,6 +34,7 @@
                         </div>
 
                         <div class="form-group mb-0">
+                            <br>
                             <button type="submit" class="btn btn-primary">
                                 {{ __('Create Post') }}
                             </button>

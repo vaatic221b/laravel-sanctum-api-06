@@ -128,46 +128,4 @@ class PostController extends Controller
         return redirect()->route('home')->with('success', 'Post deleted successfully.');
     }
 
-    public function editComment(Comment $comment)
-    {
-        if (Gate::denies('update-comment', $comment)) {
-            return redirect()->route('home')->with('error', 'Unauthorized action.');
-        }
-
-        return view('comments.edit', compact('comment'));
-    }
-
-    public function updateComment(Request $request, Comment $comment)
-    {
-        if (Gate::denies('update-comment', $comment)) {
-            return redirect()->route('home')->with('error', 'Unauthorized action.');
-        }
-
-        $request->validate([
-            'body' => 'required|string',
-        ]);
-
-        $comment->update($request->only('body'));
-
-        if ($request->expectsJson()) {
-            return response()->json($comment);
-        }
-
-        return redirect()->route('posts.show', $comment->post)->with('success', 'Comment updated successfully.');
-    }
-
-    public function destroyComment(Comment $comment)
-    {
-        if (Gate::denies('delete-comment', $comment)) {
-            return redirect()->route('home')->with('error', 'Unauthorized action.');
-        }
-
-        $comment->delete();
-
-        if (request()->expectsJson()) {
-            return response()->json(null, 204);
-        }
-
-        return redirect()->route('posts.show', $comment->post)->with('success', 'Comment deleted successfully.');
-    }
 }
