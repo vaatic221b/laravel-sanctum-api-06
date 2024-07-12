@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebPostController;
-
+// test
 Auth::routes();
 
 Route::get('/', [WebPostController::class, 'index'])->name('home');
